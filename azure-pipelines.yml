@@ -10,14 +10,10 @@ pool:
   vmImage: ubuntu-latest
 strategy:
   matrix:
-    Python27:
-      python.version: '2.7'
-    Python35:
-      python.version: '3.5'
-    Python36:
-      python.version: '3.6'
-    Python37:
-      python.version: '3.7'
+    Python39:
+      python.version: '3.9'
+    Python311:
+      python.version: '3.11'
 
 steps:
 - task: UsePythonVersion@0
@@ -34,3 +30,11 @@ steps:
     pip install pytest pytest-azurepipelines
     pytest
   displayName: 'pytest'
+
+- task: AzureRmWebAppDeployment@4
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'julia-test-service-conn-workflow-identity'
+    appType: 'webAppLinux'
+    WebAppName: 'ceb-pipelines-flask-webapp'
+    packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
