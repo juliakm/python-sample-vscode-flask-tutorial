@@ -8,6 +8,7 @@ trigger:
 
 pool:
   vmImage: ubuntu-latest
+
 strategy:
   matrix:
     Python39:
@@ -16,25 +17,37 @@ strategy:
     #   python.version: '3.11'
 
 steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '$(python.version)'
-  displayName: 'Use Python $(python.version)'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(pythonVersion)'
+    displayName: 'Use Python $(pythonVersion)'
 
-- script: |
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-  displayName: 'Install dependencies'
+  - script: |
+      python -m venv antenv
+      source antenv/bin/activate
+      python -m pip install --upgrade pip
+      pip install setup
+      pip install --target="./.python_packages/lib/site-packages" -r ./requirements.txt
+    workingDirectory: $(projectRoot)
+    displayName: "Install requirements"
 
-- script: |
-    pip install pytest pytest-azurepipelines
-    pytest
-  displayName: 'pytest'
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(Build.SourcesDirectory)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/Application$(Build.BuildId).zip'
+      replaceExistingArchive: true
+    displayName: 'Create deployment package'
 
-- task: AzureRmWebAppDeployment@4
-  inputs:
-    ConnectionType: 'AzureRM'
-    azureSubscription: 'julia-test-service-conn-workflow-identity'
-    appType: 'webAppLinux'
-    WebAppName: 'ceb-pipelines-flask-webapp'
-    packageForLinux: '$(System.DefaultWorkingDirectory)/**'
+  - publish: $(Build.ArtifactStagingDirectory)/Application$(Build.BuildId).zip
+    displayName: 'Upload package'
+    artifact: drop
+
+  - task: AzureRmWebAppDeployment@4
+    inputs:
+      ConnectionType: 'AzureRM'
+      azureSubscription: 'julia-test-service-conn-workflow-identity'
+      appType: 'webAppLinux'
+      WebAppName: 'ceb-pipelines-flask-webapp'
+      packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
