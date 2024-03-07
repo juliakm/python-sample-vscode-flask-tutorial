@@ -47,7 +47,7 @@ steps:
   - task: AzureRmWebAppDeployment@4
     inputs:
       ConnectionType: 'AzureRM'
-      azureSubscription: 'julia-test-service-conn-workflow-identity'
+      azureSubscription: 'julia-arm-server'
       appType: 'webAppLinux'
-      WebAppName: 'ceb-pipelines-flask-webapp'
+      WebAppName: 'march7tempapp'
       packageForLinux: '$(Build.ArtifactStagingDirectory)/Application$(Build.BuildId).zip'
